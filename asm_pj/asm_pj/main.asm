@@ -1,13 +1,14 @@
 INCLUDE Irvine32.inc
 INTLEN = 6
-PIXELNUM = 1
+PIXELNUM = 10
 BOXWIDTH = 2
-HEIGHT = 100
+BOXHEIGHT = 5
 convertINT PROTO,
 	arr : PTR byte,
 	len : word
 convertCOLOR PROTO,
 	arr : PTR byte,
+	tar : PTR WORD,
 	len : dword
 .data
 filename byte  "a.txt"
@@ -15,10 +16,13 @@ filehandle dword ?
 nowtime dword ?
 nexttime dword ?
 input byte 100 DUP(?)
+outputcolor WORD 100 DUP(?)
 debug DWORD ?
 outputhandle DWORD ?
 xyPosition COORD <0,0>
 bytesWritten DWORD 0
+outputchar BYTE BOXWIDTH DUP(' ')
+count DWORD 0
 .code
 
 main PROC
@@ -31,16 +35,31 @@ main PROC
 	JNE L1
 	mov eax, 0
 L1:
-	INVOKE ReadFile,filehandle, offset input, INTLEN, offset debug,0
+	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
 	INVOKE convertINT, addr input, INTLEN
 	INVOKE ReadFile,filehandle, offset input, PIXELNUM, offset debug,0
-	INVOKE convertCOLOR , addr input , PIXELNUM
-	INVOKE WriteConsoleOutputAttribute, outputHandle,ADDR input,BOXWIDTH,xyPosition,ADDR bytesWritten 
- 
+	call draw_func
 	exit
 main ENDP
 
-convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word
+draw_func PROC USES ebx ecx ;use input draw screen
+	mov xyPosition.y , 0
+	mov ecx , BOXHEIGHT
+	INVOKE convertCOLOR , offset input , offset outputcolor , PIXELNUM
+	mov ebx , offset outputcolor
+DrawLoop:
+	push ecx
+	INVOKE WriteConsoleOutputAttribute, outputHandle,ebx,BOXWIDTH,xyPosition,ADDR bytesWritten 
+	INVOKE WriteConsoleOutputCharacter,outputhandle,ADDR outputchar,BOXWIDTH,xyPosition,ADDR count	
+	add ebx , BOXWIDTH*2
+	inc xyPosition.y
+	pop ecx
+	LOOP DrawLoop
+	ret
+
+draw_func ENDP
+
+convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word ;cac the input time
 	movzx ecx, len
 	mov eax, 0
 	mov edx, 0
@@ -56,11 +75,13 @@ LOOPINT:
 	ret
 convertINT ENDP
 
-convertCOLOR PROC USES ecx ebx edx, arr:PTR byte ,len : dword
+convertCOLOR PROC USES eax ecx ebx edx, arr:PTR byte , tar : PTR WORD, len : dword ; cac the input color 
+	cld    
 	mov esi , arr
 	mov ecx , len
-	
+	mov edi , tar
 LOOP_COLOR:
+	mov eax , 0
 	mov al , [esi]
 	cmp al , 39h;9's ascii +1
 	JB ISINT
@@ -73,8 +94,10 @@ COLOR:
 	add al, 10;
 	JMP COLOR_RET
 COLOR_RET:
-	mov [esi] , al
-	inc esi
+	shl al , 4
+	mov [edi] , ax 
+	add esi , 1
+	add edi , 2
 	LOOP LOOP_COLOR
 	ret
 convertCOLOR ENDP
