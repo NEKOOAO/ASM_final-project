@@ -24,6 +24,7 @@ xyPosition COORD <0,0>
 bytesWritten DWORD 0
 outputchar BYTE BOXWIDTH DUP(' ')
 count DWORD 0
+endexe  byte 0
 .code
 
 main PROC
@@ -43,6 +44,9 @@ L1:
 	INVOKE ReadFile,filehandle, offset input, PIXELNUM, offset debug,0
 	call draw_func
 	call wait_next_scene
+	movzx eax , endexe
+	cmp eax , 1
+	JE BREAK
 	JMP L1
 BREAK:
 	exit
@@ -53,6 +57,8 @@ NEXTINPUT:
 	INVOKE ReadFile,filehandle, addr input, 2, offset debug,0
 	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
 	INVOKE convertINT, addr input, INTLEN
+	cmp eax , 0FFFFFFFFh
+	JE BREAK
 	add eax , starttime
 	mov nexttime , eax
 	call GetTickCount
@@ -64,6 +70,7 @@ NEXTSCENE:
 	mov ebx , nexttime
 	sub ebx , eax
 	INVOKE sleep, ebx
+BREAK:
 	ret
 wait_next_scene ENDP
 
@@ -90,6 +97,12 @@ convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word ;cac the input time
 	mov edx, 0
 	mov ebx , 10
 	mov esi , arr
+	mov dl ,[esi]
+	cmp dl , 53h
+	JNE LOOPINT
+	mov endexe , 1
+	mov eax , 0FFFFFFFFh
+	JMP INTRET
 LOOPINT:
 	mul ebx
 	mov dl,[esi]
@@ -97,6 +110,7 @@ LOOPINT:
 	add eax,edx
 	inc esi
 	loop LOOPINT
+INTRET:
 	ret
 convertINT ENDP
 
