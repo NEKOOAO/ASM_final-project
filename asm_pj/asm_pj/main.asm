@@ -15,6 +15,7 @@ filename byte  "a.txt"
 filehandle dword ?
 nowtime dword ?
 nexttime dword ?
+starttime dword ?
 input byte 100 DUP(?)
 outputcolor WORD 100 DUP(?)
 debug DWORD ?
@@ -32,15 +33,39 @@ main PROC
 	INVOKE CreateFile, OFFSET filename, GENERIC_READ,DO_NOT_SHARE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL, 0
 	mov filehandle , eax
 	cmp eax , INVALID_HANDLE_VALUE
-	JNE L1
+	JE BREAK
+	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
+	call GetTickCount
+	mov starttime , eax
 	mov eax, 0
 L1:
-	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
 	INVOKE convertINT, addr input, INTLEN
 	INVOKE ReadFile,filehandle, offset input, PIXELNUM, offset debug,0
 	call draw_func
+	call wait_next_scene
+	JMP L1
+BREAK:
 	exit
 main ENDP
+
+wait_next_scene PROC USES eax ebx ecx
+NEXTINPUT:
+	INVOKE ReadFile,filehandle, addr input, 2, offset debug,0
+	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
+	INVOKE convertINT, addr input, INTLEN
+	add eax , starttime
+	mov nexttime , eax
+	call GetTickCount
+	cmp eax , nexttime
+	JB NEXTSCENE
+	INVOKE ReadFile,filehandle, offset input, PIXELNUM, offset debug,0
+	JMP NEXTINPUT
+NEXTSCENE:
+	mov ebx , nexttime
+	sub ebx , eax
+	INVOKE sleep, ebx
+	ret
+wait_next_scene ENDP
 
 draw_func PROC USES ebx ecx ;use input draw screen
 	mov xyPosition.y , 0
@@ -59,7 +84,7 @@ DrawLoop:
 
 draw_func ENDP
 
-convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word ;cac the input time
+convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word ;cac the input time (ret in eax)
 	movzx ecx, len
 	mov eax, 0
 	mov edx, 0
