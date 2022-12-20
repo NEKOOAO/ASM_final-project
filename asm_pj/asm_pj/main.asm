@@ -1,8 +1,8 @@
 INCLUDE Irvine32.inc
 INTLEN = 6
-PIXELNUM = 10
-BOXWIDTH = 2
-BOXHEIGHT = 5
+PIXELNUM = 20000
+BOXWIDTH = 200
+BOXHEIGHT = 100
 convertINT PROTO,
 	arr : PTR byte,
 	len : word
@@ -11,13 +11,14 @@ convertCOLOR PROTO,
 	tar : PTR WORD,
 	len : dword
 .data
-filename byte  "a.txt"
+fileinput byte  "input file name : ",0
+startplay byte "push any key to play video " , 0
 filehandle dword ?
 nowtime dword ?
 nexttime dword ?
 starttime dword ?
-input byte 100 DUP(?)
-outputcolor WORD 100 DUP(?)
+input byte 20009 DUP(?)
+outputcolor WORD 20009 DUP(?)
 debug DWORD ?
 outputhandle DWORD ?
 xyPosition COORD <0,0>
@@ -28,10 +29,19 @@ endexe  byte 0
 .code
 
 main PROC
+	mov edx , offset fileinput
+	call WriteString
+	mov edx , offset input
+	mov ecx , (SIZEOF input)-1
+	call ReadString
+	mov edx , offset startplay
+	call WriteString
+	call crlf
+	call waitmsg
 	INVOKE GetStdHandle, STD_OUTPUT_HANDLE ; Get the console ouput handle
 	mov outputhandle , eax
 	call Clrscr
-	INVOKE CreateFile, OFFSET filename, GENERIC_READ,DO_NOT_SHARE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL, 0
+	INVOKE CreateFile, OFFSET input, GENERIC_READ,DO_NOT_SHARE,NULL,OPEN_EXISTING,FILE_ATTRIBUTE_NORMAL, 0
 	mov filehandle , eax
 	cmp eax , INVALID_HANDLE_VALUE
 	JE BREAK
