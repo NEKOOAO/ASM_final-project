@@ -1,8 +1,8 @@
 INCLUDE Irvine32.inc
 INTLEN = 6
-PIXELNUM = 20000
-BOXWIDTH = 200
-BOXHEIGHT = 100
+PIXELNUM = 100
+BOXWIDTH = 10
+BOXHEIGHT = 10
 convertINT PROTO,
 	arr : PTR byte,
 	len : word
@@ -17,15 +17,15 @@ filehandle dword ?
 nowtime dword ?
 nexttime dword ?
 starttime dword ?
-input byte 20009 DUP(?)
-outputcolor WORD 20009 DUP(?)
+input byte PIXELNUM DUP(?)
+outputcolor WORD PIXELNUM DUP(?)
 debug DWORD ?
 outputhandle DWORD ?
 xyPosition COORD <0,0>
 bytesWritten DWORD 0
 outputchar BYTE BOXWIDTH DUP(' ')
 count DWORD 0
-endexe  byte 0
+endexe  byte 0 
 .code
 
 main PROC
@@ -98,7 +98,7 @@ DrawLoop:
 	pop ecx
 	LOOP DrawLoop
 	ret
-
+	
 draw_func ENDP
 
 convertINT PROC USES ecx ebx edx, arr: PTR byte , len : word ;cac the input time (ret in eax)
