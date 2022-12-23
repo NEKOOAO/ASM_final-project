@@ -26,6 +26,11 @@ bytesWritten DWORD 0
 outputchar BYTE BOXWIDTH DUP(' ')
 count DWORD 0
 endexe  byte 0 
+nextbartime dword ?
+timeblock dword ?
+barPosition COORD <0 , BOXHEIGHT+1>
+barcolor WORD 0D0h
+barchar BYTE ' '
 .code
 
 main PROC
@@ -45,15 +50,25 @@ main PROC
 	mov filehandle , eax
 	cmp eax , INVALID_HANDLE_VALUE
 	JE BREAK
-	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
 	call GetTickCount
 	mov starttime , eax
 	mov eax, 0
+	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
+	INVOKE convertINT, addr input, INTLEN
+	mov edx , 0
+	mov ebx , BOXWIDTH
+	DIV ebx
+	mov timeblock , eax
+	add eax , starttime
+	mov nextbartime , eax
+	INVOKE ReadFile,filehandle, addr input, 2, offset debug,0
+	INVOKE ReadFile,filehandle, addr input, INTLEN, offset debug,0
 L1:
 	INVOKE convertINT, addr input, INTLEN
 	INVOKE ReadFile,filehandle, offset input, PIXELNUM, offset debug,0
 	call draw_func
 	call wait_next_scene
+	call draw_bar
 	movzx eax , endexe
 	cmp eax , 1
 	JE BREAK
@@ -61,6 +76,22 @@ L1:
 BREAK:
 	exit
 main ENDP
+
+draw_bar PROC USES eax ebx ecx
+bar_loop:
+	call GetTickCount
+	cmp eax , nextbartime
+	JB not_draw
+	INVOKE WriteConsoleOutputAttribute, outputHandle,ADDR barcolor,1,barPosition,ADDR bytesWritten 
+	INVOKE WriteConsoleOutputCharacter,outputhandle,ADDR barchar,1,barPosition,ADDR count	
+	inc barPosition.x
+	mov eax , nextbartime
+	add eax , timeblock
+	mov nextbartime , eax
+	JMP bar_loop
+not_draw:
+	ret
+draw_bar ENDP
 
 wait_next_scene PROC USES eax ebx ecx
 NEXTINPUT:
