@@ -1,8 +1,8 @@
 INCLUDE Irvine32.inc
 INTLEN = 6
-PIXELNUM = 100
-BOXWIDTH = 10
-BOXHEIGHT = 10
+PIXELNUM = 79325
+BOXWIDTH = 475
+BOXHEIGHT = 167
 convertINT PROTO,
 	arr : PTR byte,
 	len : word
@@ -74,6 +74,7 @@ L1:
 	JE BREAK
 	JMP L1
 BREAK:
+	call Clrscr
 	exit
 main ENDP
 
